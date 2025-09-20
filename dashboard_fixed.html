@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Solar-Surv Vaccine Monitor</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f0f0f0; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; }
+        .header { background: #ff6b6b; color: white; padding: 20px; text-align: center; border-radius: 10px; }
+        .device-card { border: 2px solid #ddd; margin: 10px; padding: 20px; border-radius: 10px; }
+        .device-card.alert { border-color: #ff4757; background: #ffe6e6; }
+        .device-card.safe { border-color: #2ed573; background: #e6ffe6; }
+        .temperature { font-size: 2em; font-weight: bold; text-align: center; margin: 10px 0; }
+        .temperature.safe { color: #2ed573; }
+        .temperature.alert { color: #ff4757; }
+        .status { text-align: center; padding: 20px; color: #666; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>��️ Solar-Surv Vaccine Monitor</h1>
+            <p>Offline Cold Chain Temperature Monitoring System</p>
+        </div>
+        <div id="devicesGrid">
+            <div class="status">
+                <h3>Connecting to receiver...</h3>
+                <p>Please wait while we connect to the LoRa receiver</p>
+            </div>
+        </div>
+    </div>
+    <script>
+        let devices = new Map();
+        let ws;
+        let connected = false;
+
+        function initWebSocket() {
+            ws = new WebSocket('ws://localhost:8765');
+            
+            ws.onopen = function() {
+                console.log('Connected to Solar-Surv receiver');
+                connected = true;
+                document.getElementById('devicesGrid').innerHTML = '<div class="status"><h3>Connected! Waiting for device data...</h3></div>';
+            };
+            
+            ws.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                updateDevice(data);
+            };
+            
+            ws.onclose = function() {
+                console.log('Disconnected from receiver');
+                connected = false;
+                document.getElementById('devicesGrid').innerHTML = '<div class="status"><h3>Disconnected from receiver</h3><p>Please check if the Python receiver is running</p></div>';
+                setTimeout(initWebSocket, 3000);
+            };
+            
+            ws.onerror = function(error) {
+                console.log('WebSocket error:', error);
+                document.getElementById('devicesGrid').innerHTML = '<div class="status"><h3>Connection Error</h3><p>Make sure the Python receiver is running on port 8765</p></div>';
+            };
+        }
+
+        function updateDevice(data) {
+            const deviceId = data.deviceId;
+            devices.set(deviceId, data);
+            renderDevices();
+        }
+
+        function renderDevices() {
+            const grid = document.getElementById('devicesGrid');

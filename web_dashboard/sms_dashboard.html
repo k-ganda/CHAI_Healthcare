@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Solar-Surv SMS Monitoring Dashboard</title>
+		<style>
+			* {
+				margin: 0;
+				padding: 0;
+				box-sizing: border-box;
+			}
+
+			body {
+				font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+				background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+				min-height: 100vh;
+				color: #333;
+			}
+
+			.container {
+				max-width: 1400px;
+				margin: 0 auto;
+				padding: 20px;
+			}
+
+			.header {
+				background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+				color: white;
+				padding: 30px;
+				border-radius: 15px;
+				text-align: center;
+				margin-bottom: 30px;
+				box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+			}
+
+			.header h1 {
+				font-size: 2.5em;
+				margin-bottom: 10px;
+			}
+
+			.header p {
+				font-size: 1.2em;
+				opacity: 0.9;
+			}
+
+			.dashboard-grid {
+				display: grid;
+				grid-template-columns: 1fr 1fr;
+				gap: 30px;
+				margin-bottom: 30px;
+			}
+
+			.panel {
+				background: white;
+				border-radius: 15px;
+				padding: 25px;
+				box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+			}
+
+			.panel h2 {
+				color: #333;
+				margin-bottom: 20px;
+				font-size: 1.5em;
+				border-bottom: 3px solid #ff6b6b;
+				padding-bottom: 10px;
+			}
+
+			.sensor-status {
+				display: flex;
+				align-items: center;
+				justify-content: space-between;
+				margin-bottom: 20px;
+				padding: 15px;
+				background: #f8f9fa;
+				border-radius: 10px;
+			}
+
+			.temperature-display {
+				text-align: center;
+				margin: 20px 0;
+			}
+
+			.temperature-value {
+				font-size: 4em;
+				font-weight: bold;
+				margin: 10px 0;
+			}
+
+			.temperature-value.safe {
+				color: #2ed573;
+			}
+
+			.temperature-value.alert {
+				color: #ff4757;
+			}
+
+			.status-indicator {
+				width: 20px;
+				height: 20px;
+				border-radius: 50%;
+				animation: pulse 2s infinite;
+			}
+
+			.status-indicator.safe {
+				background: #2ed573;
+			}
+
+			.status-indicator.alert {
+				background: #ff4757;
+			}
+
+			.sms-log {
+				max-height: 400px;
+				overflow-y: auto;
+				border: 1px solid #e0e0e0;
+				border-radius: 10px;
+				padding: 15px;
+			}
+
+			.sms-item {
+				background: #f8f9fa;
+				border-left: 4px solid #ff6b6b;
+				padding: 15px;
+				margin: 10px 0;
+				border-radius: 5px;
+				animation: slideIn 0.5s ease-out;
+			}
+
+			.sms-item.alert {
+				border-left-color: #ff4757;
+				background: #ffe6e6;
+			}
+
+			.sms-item.normal {
+				border-left-color: #2ed573;
+				background: #e6ffe6;
+			}
+
+			.sms-time {
+				font-size: 0.9em;
+				color: #666;
+				margin-bottom: 5px;
+			}
+
+			.sms-message {
+				font-weight: bold;
+				margin-bottom: 5px;
+			}
+
+			.sms-details {
+				font-size: 0.9em;
+				color: #666;
+			}
+
+			.phone-simulation {
+				background: #2c3e50;
+				color: white;
+				border-radius: 20px;
+				padding: 20px;
+				text-align: center;
+				margin: 20px 0;
+			}
+
+			.phone-screen {
+				background: #34495e;
+				border-radius: 15px;
+				padding: 20px;
+				margin: 10px 0;
+			}
+
+			.phone-notification {
+				background: #e74c3c;
+				color: white;
+				padding: 10px;
+				border-radius: 10px;
+				margin: 10px 0;
+				animation: blink 1s infinite;
+			}
+
+			.stats-grid {
+				display: grid;
+				grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+				gap: 20px;
+				margin-top: 30px;
+			}
+
+			.stat-card {
+				background: white;
+				padding: 20px;
+				border-radius: 10px;
+				text-align: center;
+				box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+			}
+
+			.stat-number {
+				font-size: 2em;
+				font-weight: bold;
+				color: #ff6b6b;
+				margin-bottom: 5px;
+			}
+
+			.stat-label {
+				color: #666;
+				font-size: 0.9em;
+			}
+
+			@keyframes pulse {
+				0% {
+					opacity: 1;
+				}
+				50% {
+					opacity: 0.5;
+				}
+				100% {
+					opacity: 1;
+				}
+			}
+
+			@keyframes slideIn {
+				from {
+					transform: translateX(-20px);
+					opacity: 0;
+				}
+				to {
+					transform: translateX(0);
+					opacity: 1;
+				}
+			}
+
+			@keyframes blink {
+				0%,
+				50% {
+					opacity: 1;
+				}
+				51%,
+				100% {
+					opacity: 0.3;
+				}
+			}
+
+			.offline-badge {
+				background: #2ed573;
+				color: white;
+				padding: 5px 15px;
+				border-radius: 20px;
+				font-size: 0.8em;
+				font-weight: bold;
+				display: inline-block;
+				margin: 10px 0;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="container">
+			<div class="header">
+				<h1>🌡️ Solar-Surv SMS Monitoring System</h1>
+				<p>Offline Vaccine Cold Chain Temperature Monitoring</p>
+				<div class="offline-badge">
+					�� OFFLINE OPERATION - NO INTERNET REQUIRED
+				</div>
+			</div>
+
+			<div class="dashboard-grid">
+				<!-- Sensor Node Panel -->
+				<div class="panel">
+					<h2>📡 Sensor Node (Arduino + GSM)</h2>
+					<div class="sensor-status">
+						<div>
+							<strong>Device ID:</strong> 001<br />
+							<strong>Location:</strong> Rural Clinic, Kenya<br />
+							<strong>Power:</strong> Solar Panel + Battery
+						</div>
+						<div class="status-indicator safe" id="sensorStatus"></div>
+					</div>
+
+					<div class="temperature-display">
+						<div style="color: #666; font-size: 1.2em">Current Temperature</div>
+						<div class="temperature-value safe" id="temperatureValue">
+							4.2°C
+						</div>
+						<div style="color: #666">Safe Range: 2-8°C</div>
+					</div>
+
+					<div style="margin-top: 20px">
+						<div
+							style="
+								display: flex;
+								justify-content: space-between;
+								margin: 10px 0;
+							">
+							<span>Battery Level:</span>
+							<span id="batteryLevel">3.8V</span>
+						</div>
+						<div
+							style="
+								display: flex;
+								justify-content: space-between;
+								margin: 10px 0;
+							">
+							<span>Last Reading:</span>
+							<span id="lastReading">Just now</span>
+						</div>
+						<div
+							style="
+								display: flex;
+								justify-content: space-between;
+								margin: 10px 0;
+							">
+							<span>SMS Count:</span>
+							<span id="smsCount">0</span>
+						</div>
+					</div>
+				</div>
+
+				<!-- SMS Log Panel -->
+				<div class="panel">
+					<h2>�� SMS Alert Log</h2>
+					<div class="sms-log" id="smsLog">
+						<div class="sms-item normal">
+							<div class="sms-time">14:30:15</div>
+							<div class="sms-message">System Started</div>
+							<div class="sms-details">Vaccine monitoring initiated</div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- Phone Simulation -->
+			<div class="panel">
+				<h2>📱 Button Phone Receiver</h2>
+				<div class="phone-simulation">
+					<div style="font-size: 1.2em; margin-bottom: 15px">
+						📱 Basic Nokia Phone
+					</div>
+					<div class="phone-screen">
+						<div style="text-align: left; margin-bottom: 15px">
+							<div style="font-size: 0.9em; color: #bdc3c7">SMS Inbox</div>
+							<div style="font-size: 0.8em; color: #95a5a6">
+								Solar-Surv Alerts
+							</div>
+						</div>
+						<div id="phoneMessages">
+							<div
+								style="
+									background: #2c3e50;
+									padding: 10px;
+									border-radius: 5px;
+									margin: 5px 0;
+								">
+								<div style="font-size: 0.8em; color: #bdc3c7">14:30</div>
+								<div>System monitoring started</div>
+							</div>
+						</div>
+					</div>
+					<div
+						class="phone-notification"
+						id="phoneNotification"
+						style="display: none">
+						�� NEW SMS ALERT! 📞
+					</div>
+				</div>
+			</div>
+
+			<!-- Statistics -->
+			<div class="stats-grid">
+				<div class="stat-card">
+					<div class="stat-number" id="totalSMS">0</div>
+					<div class="stat-label">SMS Alerts Sent</div>
+				</div>
+				<div class="stat-card">
+					<div class="stat-number" id="alertsTriggered">0</div>
+					<div class="stat-label">Temperature Alerts</div>
+				</div>
+				<div class="stat-card">
+					<div class="stat-number" id="uptime">00:00</div>
+					<div class="stat-label">System Uptime</div>
+				</div>
+				<div class="stat-card">
+					<div class="stat-number" id="cost">$0.00</div>
+					<div class="stat-label">SMS Cost</div>
+				</div>
+			</div>
+		</div>
+
+		<script>
+			// Dashboard functionality
+			let smsCount = 0;
+			let alertCount = 0;
+			let startTime = Date.now();
+			let smsCost = 0.02; // $0.02 per SMS
+
+			// Temperature scenarios
+			const scenarios = [
+				{
+					temp: 4.2,
+					battery: 3.8,
+					status: 'safe',
+					message: 'Normal operation',
+				},
+				{
+					temp: 5.1,
+					battery: 3.7,
+					status: 'safe',
+					message: 'Temperature stable',
+				},
+				{
+					temp: 6.3,
+					battery: 3.6,
+					status: 'safe',
+					message: 'All systems normal',
+				},
+				{
+					temp: 8.9,
+					battery: 3.5,
+					status: 'alert',
+					message:
+						'VACCINE ALERT: Temperature 8.9°C is TOO HOT! Safe range: 2-8°C',
+				},
+				{
+					temp: 9.5,
+					battery: 3.4,
+					status: 'alert',
+					message:
+						'VACCINE ALERT: Temperature 9.5°C is TOO HOT! Safe range: 2-8°C',
+				},
+				{
+					temp: 1.2,
+					battery: 3.3,
+					status: 'alert',
+					message:
+						'VACCINE ALERT: Temperature 1.2°C is TOO COLD! Safe range: 2-8°C',
+				},
+				{
+					temp: 2.1,
+					battery: 3.2,
+					status: 'alert',
+					message:
+						'VACCINE ALERT: Temperature 2.1°C is TOO COLD! Safe range: 2-8°C',
+				},
+				{
+					temp: 4.8,
+					battery: 3.1,
+					status: 'safe',
+					message: 'Temperature returning to normal',
+				},
+			];
+
+			let currentScenario = 0;
+
+			function updateTemperature() {
+				const scenario = scenarios[currentScenario];
+				const tempElement = document.getElementById('temperatureValue');
+				const statusElement = document.getElementById('sensorStatus');
+				const batteryElement = document.getElementById('batteryLevel');
+				const lastReadingElement = document.getElementById('lastReading');
+
+				// Update temperature
+				tempElement.textContent = scenario.temp + '°C';
+				tempElement.className = 'temperature-value ' + scenario.status;
+
+				// Update status indicator
+				statusElement.className = 'status-indicator ' + scenario.status;
+
+				// Update battery
+				batteryElement.textContent = scenario.battery + 'V';
+
+				// Update last reading time
+				lastReadingElement.textContent = 'Just now';
+
+				// Add SMS if alert
+				if (scenario.status === 'alert') {
+					addSMSAlert(scenario.message);
+					alertCount++;
+				}
+
+				// Move to next scenario
+				currentScenario = (currentScenario + 1) % scenarios.length;
+			}
+
+			function addSMSAlert(message) {
+				smsCount++;
+				const smsLog = document.getElementById('smsLog');
+				const phoneMessages = document.getElementById('phoneMessages');
+				const now = new Date();
+				const timeStr = now.toLocaleTimeString();
+
+				// Add to SMS log
+				const smsItem = document.createElement('div');
+				smsItem.className =
+					'sms-item ' + (message.includes('ALERT') ? 'alert' : 'normal');
+				smsItem.innerHTML = `
+                <div class="sms-time">${timeStr}</div>
+                <div class="sms-message">${message}</div>
+                <div class="sms-details">SMS sent to clinic phone (+1234567890)</div>
+            `;
+				smsLog.insertBefore(smsItem, smsLog.firstChild);
+
+				// Add to phone messages
+				const phoneItem = document.createElement('div');
+				phoneItem.style.background = '#e74c3c';
+				phoneItem.style.color = 'white';
+				phoneItem.style.padding = '10px';
+				phoneItem.style.borderRadius = '5px';
+				phoneItem.style.margin = '5px 0';
+				phoneItem.innerHTML = `
+                <div style="font-size: 0.8em; opacity: 0.8;">${timeStr}</div>
+                <div>${message.substring(0, 30)}...</div>
+            `;
+				phoneMessages.insertBefore(phoneItem, phoneMessages.firstChild);
+
+				// Show phone notification
+				const notification = document.getElementById('phoneNotification');
+				notification.style.display = 'block';
+				setTimeout(() => {
+					notification.style.display = 'none';
+				}, 3000);
+
+				// Update statistics
+				updateStats();
+			}
+
+			function updateStats() {
+				document.getElementById('totalSMS').textContent = smsCount;
+				document.getElementById('alertsTriggered').textContent = alertCount;
+				document.getElementById('cost').textContent =
+					'$' + (smsCount * smsCost).toFixed(2);
+
+				// Update uptime
+				const uptime = Math.floor((Date.now() - startTime) / 1000);
+				const minutes = Math.floor(uptime / 60);
+				const seconds = uptime % 60;
+				document.getElementById('uptime').textContent =
+					String(minutes).padStart(2, '0') +
+					':' +
+					String(seconds).padStart(2, '0');
+			}
+
+			// Start the simulation
+			function startSimulation() {
+				updateTemperature();
+				setInterval(updateTemperature, 5000); // Update every 5 seconds
+				setInterval(updateStats, 1000); // Update stats every second
+			}
+
+			// Start when page loads
+			document.addEventListener('DOMContentLoaded', startSimulation);
+		</script>
+	</body>
+</html>
